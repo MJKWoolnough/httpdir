@@ -21,7 +21,7 @@ type Dir struct {
 func NewDir(t time.Time) Dir {
 	return Dir{
 		dir: dir{
-			modtime:  t,
+			modTime:  t,
 			contents: make(map[string]Node),
 		},
 	}
@@ -37,7 +37,7 @@ func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) 
 		name = name[1:]
 	}
 	if len(name) == 0 {
-		return nil
+		return dir{}, nil
 	}
 	td := d.dir
 	for _, part := range strings.Split(name, "/") {
@@ -47,19 +47,19 @@ func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) 
 			case dir:
 				td = f
 			default:
-				return os.ErrInvalid
+				return dir{}, os.ErrInvalid
 			}
 		} else {
 			nd := dir{
 				index,
-				make(map[string]node),
+				make(map[string]Node),
 				modTime,
 			}
 			td.contents[part] = nd
 			td = nd
 		}
 	}
-	return nil
+	return dir{}, nil
 }
 
 func (d *Dir) Create(name string, n Node) error {
@@ -97,7 +97,7 @@ func (d dir) Open() (File, error) {
 	if !d.index {
 		return nil, os.ErrPermission
 	}
-	return newDirectory(d)
+	return newDirectory(d), nil
 }
 
 type Node interface {
@@ -121,15 +121,15 @@ func (n namedNode) IsDir() bool {
 }
 
 func (n namedNode) Sys() interface{} {
-	return n.node
+	return n.Node
 }
 
 func (n namedNode) Open() (http.File, error) {
-	f, err := n.node.Open()
+	f, err := n.Node.Open()
 	if err != nil {
 		return nil, err
 	}
-	return wrapped{n, f}
+	return wrapped{n, f}, nil
 }
 
 type File interface {
@@ -145,5 +145,5 @@ type wrapped struct {
 }
 
 func (w wrapped) Stat() (os.FileInfo, error) {
-	return w.FileInfo
+	return w.FileInfo, nil
 }
