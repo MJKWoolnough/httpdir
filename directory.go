@@ -16,11 +16,11 @@ func newDirectory(d dir) File {
 	for name, node := range d.contents {
 		contents = append(contents, namedNode{name, node})
 	}
-	d := &directory{
+	dir := &directory{
 		contents: contents,
 	}
-	sort.Sort(d)
-	return d
+	sort.Sort(dir)
+	return dir
 }
 
 func (directory) Close() error {
@@ -32,14 +32,14 @@ func (directory) Read([]byte) (int, error) {
 }
 
 func (d *directory) Seek(offset int64, whence int) (int64, error) {
-	pos := d.pos
+	pos := int64(d.pos)
 	switch whence {
 	case os.SEEK_SET:
 		pos = offset
 	case os.SEEK_CUR:
 		pos += offset
 	case os.SEEK_END:
-		pos = len(d.contents) - offset
+		pos = int64(len(d.contents)) - offset
 	}
 	if pos != 0 {
 		return 0, os.ErrInvalid
