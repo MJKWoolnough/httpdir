@@ -1,183 +1,149 @@
 package httpdir
 
 import (
-	"bytes"
-	"errors"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
 
-type Dir map[string]File
+const (
+	ModeDir  os.FileMode = os.ModeDir | 0755
+	ModeFile os.FileMode = 0644
+)
 
-func (d Dir) Open(name string) (http.File, error) {
-	f, ok := d[name]
-	if !ok {
-		return nil, NotFound
+type Dir struct {
+	dir
+}
+
+func NewDir(t time.Time) Dir {
+	return Dir{
+		dir: dir{
+			modtime:  t,
+			contents: make(map[string]Node),
+		},
 	}
-	return f.Open()
+}
+
+func (d *Dir) Mkdir(name string, modTime time.Time, index bool) error {
+	_, err := d.makePath(path.Clean(name), modTime, index)
+	return err
+}
+
+func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
+	if len(name) > 0 && name[0] == '/' {
+		name = name[1:]
+	}
+	if len(name) == 0 {
+		return nil
+	}
+	td := d.dir
+	for _, part := range strings.Split(name, "/") {
+		n, ok := td.contents[part]
+		if ok {
+			switch f := n.(type) {
+			case dir:
+				td = f
+			default:
+				return os.ErrInvalid
+			}
+		} else {
+			nd := dir{
+				index,
+				make(map[string]node),
+				modTime,
+			}
+			td.contents[part] = nd
+			td = nd
+		}
+	}
+	return nil
+}
+
+func (d *Dir) Create(name string, n Node) error {
+	dname, fname := path.Split(name)
+	dn, err := d.makePath(dname, n.ModTime(), false)
+	if err != nil {
+		return nil
+	}
+	if _, ok := dn.contents[fname]; ok {
+		return os.ErrExist
+	}
+	dn.contents[fname] = n
+	return nil
+}
+
+type dir struct {
+	index    bool
+	contents map[string]Node
+	modTime  time.Time
+}
+
+func (d dir) Size() int64 {
+	return 0
+}
+
+func (dir) Mode() os.FileMode {
+	return ModeDir
+}
+
+func (d dir) ModTime() time.Time {
+	return d.modTime
+}
+
+func (d dir) Open() (File, error) {
+	if !d.index {
+		return nil, os.ErrPermission
+	}
+	return newDirectory(d)
+}
+
+type Node interface {
+	Size() int64
+	Mode() os.FileMode
+	ModTime() time.Time
+	Open() (File, error)
+}
+
+type namedNode struct {
+	name string
+	Node
+}
+
+func (n namedNode) Name() string {
+	return n.name
+}
+
+func (n namedNode) IsDir() bool {
+	return n.Mode().IsDir()
+}
+
+func (n namedNode) Sys() interface{} {
+	return n.node
+}
+
+func (n namedNode) Open() (http.File, error) {
+	f, err := n.node.Open()
+	if err != nil {
+		return nil, err
+	}
+	return wrapped{n, f}
 }
 
 type File interface {
-	Open() (http.File, error)
-}
-
-type stat struct {
-	name    string
-	size    int64
-	mode    os.FileMode
-	modTime time.Time
-}
-
-func (s *stat) Stat() (os.FileInfo, error) {
-	return s, nil
-}
-
-func (s *stat) Name() string {
-	return s.name
-}
-
-func (s *stat) Size() int64 {
-	return s.size
-}
-
-func (s *stat) Mode() os.FileMode {
-	return s.mode
-}
-
-func (s *stat) ModTime() time.Time {
-	return s.modTime
-}
-
-func (s *stat) IsDir() bool {
-	return s.mode.IsDir()
-}
-
-func (s *stat) Sys() interface{} {
-	return s
-}
-
-type file interface {
-	io.Closer
 	io.Reader
 	io.Seeker
+	io.Closer
+	Readdir(int) ([]os.FileInfo, error)
 }
 
-type fileWrapper struct {
-	file
-	*stat
+type wrapped struct {
+	os.FileInfo
+	File
 }
 
-func (fileWrapper) Readdir(int) ([]os.FileInfo, error) {
-	return nil, os.ErrInvalid
+func (w wrapped) Stat() (os.FileInfo, error) {
+	return w.FileInfo
 }
-
-type fileBytes struct {
-	data []byte
-	stat
-}
-
-func FileBytes(name string, data []byte, modTime time.Time) File {
-	return &fileBytes{
-		data,
-		stat{
-			name,
-			int64(len(data)),
-			0644,
-			modTime,
-		},
-	}
-}
-
-type bytesCloser struct {
-	*bytes.Reader
-}
-
-func (bytesCloser) Close() error {
-	return nil
-}
-
-func (f *fileBytes) Open() (http.File, error) {
-	return fileWrapper{
-		bytesCloser{bytes.NewReader(f.data)},
-		&f.stat,
-	}, nil
-}
-
-type fileString struct {
-	data string
-	stat
-}
-
-func FileString(name, data string, modTime time.Time) File {
-	return &fileString{
-		data,
-		stat{
-			name,
-			int64(len(data)),
-			0644,
-			modTime,
-		},
-	}
-}
-
-type stringCloser struct {
-	*strings.Reader
-}
-
-func (stringCloser) Close() error {
-	return nil
-}
-
-func (f *fileString) Open() (http.File, error) {
-	return &fileWrapper{
-		stringCloser{strings.NewReader(f.data)},
-		&f.stat,
-	}, nil
-}
-
-type dirWrapper struct {
-	*directory
-	pos int
-}
-
-func (d *dirWrapper) Close() error {
-	return nil
-}
-
-func (d *dirWrapper) Seek(offset int64, whence int) (int64, error) {
-	return 0, nil
-}
-
-func (d *dirWrapper) Readdir(count int) ([]os.FileInfo, error) {
-	return nil, nil
-}
-
-func (dirWrapper) Read([]byte) (int, error) {
-	return 0, os.ErrInvalid
-}
-
-type directory struct {
-	contents []string
-	stat
-}
-
-func Directory(name string, contents []string, modTime time.Time) File {
-	return &directory{
-		contents,
-		stat{
-			name,
-			0,
-			os.ModeDir | 0755,
-			modTime,
-		},
-	}
-}
-
-func (d *directory) Open() (http.File, error) {
-	return &dirWrapper{directory: d}, nil
-}
-
-var NotFound = errors.New("file not found")
