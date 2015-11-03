@@ -1,4 +1,4 @@
-package dir
+package httpdir
 
 import (
 	"bytes"
