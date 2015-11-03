@@ -32,7 +32,7 @@ func (f fileBytes) ModTime() time.Time {
 }
 
 func (f fileBytes) Open() (File, error) {
-	return fileBytesOpen{bytes.NewReader(f.data)}
+	return fileBytesOpen{bytes.NewReader(f.data)}, nil
 }
 
 type fileBytesOpen struct {
@@ -72,7 +72,7 @@ func (f fileString) ModTime() time.Time {
 }
 
 func (f fileString) Open() (File, error) {
-	return fileStringOpen{strings.NewReader(f.data)}
+	return fileStringOpen{strings.NewReader(f.data)}, nil
 }
 
 type fileStringOpen struct {
@@ -108,7 +108,7 @@ func (o OSFile) Mode() os.FileMode {
 func (o OSFile) ModTime() time.Time {
 	s, err := os.Stat(string(o))
 	if err != nil {
-		return 0
+		return time.Time{}
 	}
 	return s.ModTime()
 }
