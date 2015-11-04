@@ -16,12 +16,11 @@ var (
 	varname = flag.String("v", "dir", "http dir variable name")
 	help    = flag.Bool("h", false, "show help")
 	//comp = flag.String("-c", "", "compression method [gzip, bzip2, lzw, zlib, flate]")
-	//bytes = flag.Bool("-b", false, "output as byte slice instead of string (writeable)")
 )
 
 func errHandler(err error) {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error()+"\n")
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }
