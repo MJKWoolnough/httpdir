@@ -27,6 +27,9 @@ func (d dir) ModTime() time.Time {
 
 func (d dir) Open() (File, error) {
 	if !d.index {
+		if f, ok := d.contents["index.html"]; ok {
+			return f.Open()
+		}
 		return nil, os.ErrPermission
 	}
 	contents := make([]os.FileInfo, 0, len(d.contents))
