@@ -81,7 +81,7 @@ func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) 
 			td = nd
 		}
 	}
-	return dir{}, nil
+	return td, nil
 }
 
 func (d *Dir) Create(name string, n Node) error {
