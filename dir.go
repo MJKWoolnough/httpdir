@@ -58,11 +58,11 @@ func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) 
 	if len(name) > 0 && name[0] == '/' {
 		name = name[1:]
 	}
-	if len(name) == 0 {
-		return dir{}, nil
-	}
 	td := d.d
 	for _, part := range strings.Split(name, "/") {
+		if part == "" {
+			continue
+		}
 		n, ok := td.contents[part]
 		if ok {
 			switch f := n.(type) {
