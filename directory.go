@@ -4,14 +4,31 @@ import (
 	"io"
 	"os"
 	"sort"
+	"time"
 )
 
-type directory struct {
-	contents []os.FileInfo
-	pos      int
+type dir struct {
+	index    bool
+	contents map[string]Node
+	modTime  time.Time
 }
 
-func newDirectory(d dir) File {
+func (d dir) Size() int64 {
+	return 0
+}
+
+func (dir) Mode() os.FileMode {
+	return ModeDir
+}
+
+func (d dir) ModTime() time.Time {
+	return d.modTime
+}
+
+func (d dir) Open() (File, error) {
+	if !d.index {
+		return nil, os.ErrPermission
+	}
 	contents := make([]os.FileInfo, 0, len(d.contents))
 	for name, node := range d.contents {
 		contents = append(contents, namedNode{name, node})
@@ -20,7 +37,12 @@ func newDirectory(d dir) File {
 		contents: contents,
 	}
 	sort.Sort(dir)
-	return dir
+	return dir, nil
+}
+
+type directory struct {
+	contents []os.FileInfo
+	pos      int
 }
 
 func (directory) Close() error {

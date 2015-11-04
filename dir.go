@@ -75,31 +75,6 @@ func (d *Dir) Create(name string, n Node) error {
 	return nil
 }
 
-type dir struct {
-	index    bool
-	contents map[string]Node
-	modTime  time.Time
-}
-
-func (d dir) Size() int64 {
-	return 0
-}
-
-func (dir) Mode() os.FileMode {
-	return ModeDir
-}
-
-func (d dir) ModTime() time.Time {
-	return d.modTime
-}
-
-func (d dir) Open() (File, error) {
-	if !d.index {
-		return nil, os.ErrPermission
-	}
-	return newDirectory(d), nil
-}
-
 type Node interface {
 	Size() int64
 	Mode() os.FileMode
