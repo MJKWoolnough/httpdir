@@ -18,7 +18,7 @@ type Dir struct {
 	d dir
 }
 
-func NewDir(t time.Time) Dir {
+func New(t time.Time) Dir {
 	return Dir{
 		dir{
 			modTime:  t,
