@@ -15,16 +15,38 @@ const (
 )
 
 type Dir struct {
-	dir
+	d dir
 }
 
 func NewDir(t time.Time) Dir {
 	return Dir{
-		dir: dir{
+		dir{
 			modTime:  t,
 			contents: make(map[string]Node),
 		},
 	}
+}
+
+func (d *Dir) Open(name string) (http.File, error) {
+	name = path.Clean(name)
+	if len(name) > 0 && name[0] == '/' {
+		name = name[1:]
+	}
+	n := namedNode{"", d.d}
+	if len(name) > 0 {
+		for _, part := range strings.Split(name, "/") {
+			nd, ok := n.Node.(dir)
+			if !ok {
+				return nil, os.ErrInvalid
+			}
+			dn, ok := nd.contents[part]
+			if !ok {
+				return nil, os.ErrNotExist
+			}
+			n = namedNode{part, dn}
+		}
+	}
+	return n.Open()
 }
 
 func (d *Dir) Mkdir(name string, modTime time.Time, index bool) error {
@@ -39,7 +61,7 @@ func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) 
 	if len(name) == 0 {
 		return dir{}, nil
 	}
-	td := d.dir
+	td := d.d
 	for _, part := range strings.Split(name, "/") {
 		n, ok := td.contents[part]
 		if ok {
