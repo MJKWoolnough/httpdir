@@ -27,7 +27,7 @@ func New(t time.Time) Dir {
 	}
 }
 
-func (d *Dir) Open(name string) (http.File, error) {
+func (d Dir) Open(name string) (http.File, error) {
 	name = path.Clean(name)
 	if len(name) > 0 && name[0] == '/' {
 		name = name[1:]
@@ -49,12 +49,12 @@ func (d *Dir) Open(name string) (http.File, error) {
 	return n.Open()
 }
 
-func (d *Dir) Mkdir(name string, modTime time.Time, index bool) error {
+func (d Dir) Mkdir(name string, modTime time.Time, index bool) error {
 	_, err := d.makePath(path.Clean(name), modTime, index)
 	return err
 }
 
-func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
+func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
 	if len(name) > 0 && name[0] == '/' {
 		name = name[1:]
 	}
@@ -84,7 +84,7 @@ func (d *Dir) makePath(name string, modTime time.Time, index bool) (dir, error) 
 	return td, nil
 }
 
-func (d *Dir) Create(name string, n Node) error {
+func (d Dir) Create(name string, n Node) error {
 	dname, fname := path.Split(name)
 	dn, err := d.makePath(dname, n.ModTime(), false)
 	if err != nil {
