@@ -13,7 +13,7 @@ var (
 	pkg     = flag.String("p", "main", "package name")
 	in      = flag.String("i", "", "input filename")
 	out     = flag.String("o", "", "output filename")
-	varname = flag.String("v", "dir", "http dir variable name")
+	varname = flag.String("v", "httpdir", "http dir variable name")
 	help    = flag.Bool("h", false, "show help")
 	//comp = flag.String("-c", "", "compression method [gzip, bzip2, lzw, zlib, flate]")
 )
