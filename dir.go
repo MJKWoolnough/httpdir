@@ -14,6 +14,16 @@ const (
 	ModeFile os.FileMode = 0644
 )
 
+var Default = New(time.Now())
+
+func Mkdir(name string, modTime time.Time, index bool) error {
+	return Default.Mkdir(name, modTime, index)
+}
+
+func Create(name string, n Node) error {
+	return Default.Create(name, n)
+}
+
 type Dir struct {
 	d dir
 }
