@@ -1,4 +1,4 @@
-// Package httpdir provides an implementation of http.FileSystem
+// Package httpdir provides an in-memory implementation of http.FileSystem
 package httpdir
 
 import (
