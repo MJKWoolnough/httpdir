@@ -12,6 +12,8 @@ type fileBytes struct {
 	modTime time.Time
 }
 
+// FileBytes provides an implementation of Node that takes a byte slice as its
+// data source
 func FileBytes(data []byte, modTime time.Time) Node {
 	return fileBytes{
 		data,
@@ -52,6 +54,8 @@ type fileString struct {
 	modTime time.Time
 }
 
+// FileString provides an implementation of Node that takes a string as its
+// data source
 func FileString(data string, modTime time.Time) Node {
 	return fileString{
 		data,
@@ -87,8 +91,11 @@ func (fileStringOpen) Close() error {
 	return nil
 }
 
+// OSFile is the path of a file in the real filesystem to be put into the
+// im-memory filesystem
 type OSFile string
 
+// Size returns the size of the file
 func (o OSFile) Size() int64 {
 	s, err := os.Stat(string(o))
 	if err != nil {
@@ -97,6 +104,7 @@ func (o OSFile) Size() int64 {
 	return s.Size()
 }
 
+// Mode returns the Mode of the file
 func (o OSFile) Mode() os.FileMode {
 	s, err := os.Stat(string(o))
 	if err != nil {
@@ -105,6 +113,7 @@ func (o OSFile) Mode() os.FileMode {
 	return s.Mode()
 }
 
+// ModTime returns the ModTime of the file
 func (o OSFile) ModTime() time.Time {
 	s, err := os.Stat(string(o))
 	if err != nil {
@@ -113,6 +122,7 @@ func (o OSFile) ModTime() time.Time {
 	return s.ModTime()
 }
 
+// Open opens the file, returning it as a File
 func (o OSFile) Open() (File, error) {
 	return os.Open(string(o))
 }
