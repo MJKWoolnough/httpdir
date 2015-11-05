@@ -1,3 +1,4 @@
+// Package httpdir provides an implementation of http.FileSystem
 package httpdir
 
 import (
@@ -9,25 +10,31 @@ import (
 	"time"
 )
 
+// Convenient FileMode constants
 const (
 	ModeDir  os.FileMode = os.ModeDir | 0755
 	ModeFile os.FileMode = 0644
 )
 
+// Default is the Dir used by the top-level functions
 var Default = New(time.Now())
 
+// Mkdir is a convenience function for Default.Mkdir
 func Mkdir(name string, modTime time.Time, index bool) error {
 	return Default.Mkdir(name, modTime, index)
 }
 
+// Create is a convenience function for Default.Create
 func Create(name string, n Node) error {
 	return Default.Create(name, n)
 }
 
+// Dir is the start of a simple in-memory filesystem tree
 type Dir struct {
 	d dir
 }
 
+// New creates a new, initialised, Dir
 func New(t time.Time) Dir {
 	return Dir{
 		dir{
@@ -37,6 +44,10 @@ func New(t time.Time) Dir {
 	}
 }
 
+// Open returns the file, or directory, specified by the given name.
+//
+// This method is the implementation of http.FileSystem and isn't intended to
+// be used by clients of this package.
 func (d Dir) Open(name string) (http.File, error) {
 	name = path.Clean(name)
 	if len(name) > 0 && name[0] == '/' {
@@ -59,6 +70,19 @@ func (d Dir) Open(name string) (http.File, error) {
 	return n.Open()
 }
 
+// Mkdir creates the named directory, and any parent directories required.
+//
+// modTime is the modification time of the directory, used in caching
+// mechanisms.
+//
+// index specifies whether or not the directory allows a directory listing.
+// NB: if the directory contains an index.html file, then that will be
+// displayed instead, regardless the value of index.
+//
+// All directories created will be given the specified modification time and
+// index bool.
+//
+// Directories already existing will not be modified.
 func (d Dir) Mkdir(name string, modTime time.Time, index bool) error {
 	_, err := d.makePath(path.Clean(name), modTime, index)
 	return err
@@ -94,6 +118,13 @@ func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
 	return td, nil
 }
 
+// Create places a Node into the directory tree.
+//
+// Any non-existant directories will be created automatically, setting the
+// modTime to that of the Node and the index to false.
+//
+// If you want to specify alternate modTime/index values for the directories,
+// then you should create them first with Mkdir
 func (d Dir) Create(name string, n Node) error {
 	dname, fname := path.Split(name)
 	dn, err := d.makePath(dname, n.ModTime(), false)
@@ -107,6 +138,7 @@ func (d Dir) Create(name string, n Node) error {
 	return nil
 }
 
+// Node represents a data file in the tree
 type Node interface {
 	Size() int64
 	Mode() os.FileMode
@@ -139,6 +171,7 @@ func (n namedNode) Open() (http.File, error) {
 	return wrapped{n, f}, nil
 }
 
+// File represents an opened data Node
 type File interface {
 	io.Reader
 	io.Seeker
