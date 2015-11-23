@@ -14,7 +14,7 @@ var (
 	pkg     = flag.String("p", "main", "package name")
 	in      = flag.String("i", "", "input filename")
 	out     = flag.String("o", "", "output filename")
-	varname = flag.String("v", "httpdir", "http dir variable name")
+	varname = flag.String("v", "httpdir.Default", "http dir variable name")
 	help    = flag.Bool("h", false, "show help")
 	comp    = flag.Bool("c", false, "compress using gzip")
 )
@@ -126,14 +126,14 @@ func main() {
 	errHandler(err)
 	defer fo.Close()
 	if *comp {
-		_, err = fmt.Fprintf(fo, compressedStart, *pkg)
+		_, err = fmt.Fprintf(fo, compressedStart, *pkg, *varname, *in)
 		errHandler(err)
 		w, err := gzip.NewWriterLevel(replacer{fo}, gzip.BestCompression)
 		errHandler(err)
 		_, err = io.Copy(w, fi)
 		errHandler(err)
 		errHandler(w.Close())
-		_, err = fmt.Fprintf(fo, compressedEnd, stat.ModTime().Unix(), *varname, *in+".gz", stat.Size(), *varname, *in)
+		_, err = fmt.Fprintf(fo, compressedEnd, stat.ModTime().Unix(), stat.Size())
 		errHandler(err)
 	} else {
 		_, err = fmt.Fprintf(fo, uncompressedStart, *pkg, *varname, *in)
@@ -169,14 +169,11 @@ import (
 )
 
 func init() {
-	n := httpdir.FileString("`
-	compressedEnd = `", time.Unix(%d, 0))
-	%s.Create(%q, n)
-	d, err := httpdir.Decompressed(n, %d)
+	err := httpdir.Compressed(%s, %q, httpdir.FileString("`
+	compressedEnd = `", time.Unix(%d, 0), %d)
 	if err != nil {
 		panic(err)
 	}
-	%s.Create(%q, d)
 }
 `
 )
