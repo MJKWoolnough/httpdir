@@ -2,6 +2,7 @@ package httpdir
 
 import (
 	"bytes"
+	"compress/gzip"
 	"os"
 	"strings"
 	"time"
@@ -125,4 +126,31 @@ func (o OSFile) ModTime() time.Time {
 // Open opens the file, returning it as a File
 func (o OSFile) Open() (File, error) {
 	return os.Open(string(o))
+}
+
+// Decompressed creates a new node that contains the decompressed gzip data
+// from the given node
+func Decompressed(node Node, size int) (Node, error) {
+	f, err := node.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	g, err := gzip.NewReader(f)
+	if err != nil {
+		return nil, err
+	}
+	defer g.Close()
+	buf := make([]byte, size)
+
+	var read int
+	for read < size {
+		n, err := g.Read(buf[read:])
+		if err != nil {
+			return nil, err
+		}
+		read += n
+	}
+
+	return FileBytes(buf, node.ModTime()), nil
 }
