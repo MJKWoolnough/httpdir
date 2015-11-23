@@ -170,7 +170,7 @@ import (
 
 func init() {
 	err := httpdir.Compressed(%s, %q, httpdir.FileString("`
-	compressedEnd = `", time.Unix(%d, 0), %d)
+	compressedEnd = `", time.Unix(%d, 0)), %d)
 	if err != nil {
 		panic(err)
 	}
