@@ -128,17 +128,19 @@ func (o OSFile) Open() (File, error) {
 	return os.Open(string(o))
 }
 
-// Decompressed creates a new node that contains the decompressed gzip data
-// from the given node
-func Decompressed(node Node, size int) (Node, error) {
+// Compressed adds the given node to the Directory tree and gzip decompresses
+// it into a FileBytes and also adds it to the tree.
+//
+// NB: The compressed version has .gz appended to its name
+func Compressed(d Dir, name string, node Node, size int) error {
 	f, err := node.Open()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer f.Close()
 	g, err := gzip.NewReader(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer g.Close()
 	buf := make([]byte, size)
@@ -147,10 +149,12 @@ func Decompressed(node Node, size int) (Node, error) {
 	for read < size {
 		n, err := g.Read(buf[read:])
 		if err != nil {
-			return nil, err
+			return err
 		}
 		read += n
 	}
 
-	return FileBytes(buf, node.ModTime()), nil
+	d.Create(name+".gz", node)
+	d.Create(name, FileBytes(buf, node.ModTime()))
+	return nil
 }
