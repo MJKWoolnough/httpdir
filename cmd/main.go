@@ -33,45 +33,25 @@ type replacer struct {
 var hexArr = [16]byte{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'}
 
 func (r replacer) Write(p []byte) (int, error) {
-	var (
-		toWrite [5]byte
-		t       []byte
-		n       int
-	)
-	toWrite[0] = '\\'
+	n := 0
+	toWrite := make([]byte, 0, 5)
 	for len(p) > 0 {
-		dr, s := utf8.DecodeRune(p)
-		if dr != utf8.RuneError && (s > 1 || (p[0] >= 0x20 && p[0] < 0x7f)) {
-			t = append(toWrite[1:1], p[:s]...)
-			if p[0] == '"' || p[0] == '\\' {
-				t = toWrite[:2]
-			}
+		_, s := utf8.DecodeRune(p)
+		if s > 1 || (p[0] > 0 && p[0] < 0x7f && p[0] != '\n' && p[0] != '\\' && p[0] != '"') {
+			toWrite = append(toWrite[:0], p[:s]...)
 		} else {
-			t = toWrite[:2]
 			switch p[0] {
-			case '\a':
-				toWrite[1] = 'a'
-			case '\b':
-				toWrite[1] = 'b'
-			case '\f':
-				toWrite[1] = 'f'
 			case '\n':
-				toWrite[1] = 'n'
-			case '\t':
-				toWrite[1] = '	'
-				t = toWrite[1:2]
-			case '\r':
-				toWrite[1] = 'r'
-			case '\v':
-				toWrite[1] = 'v'
+				toWrite = append(toWrite[:0], '\\', 'n')
+			case '\\':
+				toWrite = append(toWrite[:0], '\\', '\\')
+			case '"':
+				toWrite = append(toWrite[:0], '\\', '"')
 			default:
-				toWrite[1] = 'x'
-				toWrite[2] = hexArr[p[0]>>4]
-				toWrite[3] = hexArr[p[0]&15]
-				t = toWrite[:4]
+				toWrite = append(toWrite[:0], '\\', 'x', hexArr[p[0]>>4], hexArr[p[0]&15])
 			}
 		}
-		_, err := r.f.Write(t)
+		_, err := r.f.Write(toWrite)
 		n += s
 		if err != nil {
 			return n, err
@@ -153,7 +133,7 @@ func main() {
 		_, err = io.Copy(w, fi)
 		errHandler(err)
 		errHandler(w.Close())
-		_, err = fmt.Fprintf(fo, compressedEnd, stat.ModTime().Unix(), *varname, *in+".gz", *varname, *in, stat.Size())
+		_, err = fmt.Fprintf(fo, compressedEnd, stat.ModTime().Unix(), *varname, *in+".gz", stat.Size(), *varname, *in)
 		errHandler(err)
 	} else {
 		_, err = fmt.Fprintf(fo, uncompressedStart, *pkg, *varname, *in)
@@ -192,7 +172,11 @@ func init() {
 	n := httpdir.FileString("`
 	compressedEnd = `", time.Unix(%d, 0))
 	%s.Create(%q, n)
-	%s.Create(%q, httpdir.Decompressed(n, %d))
+	d, err := httpdir.Decompressed(n, %d)
+	if err != nil {
+		panic(err)
+	}
+	%s.Create(%q, d)
 }
 `
 )
