@@ -40,14 +40,14 @@ func (r replacer) Write(p []byte) (int, error) {
 	)
 	toWrite[0] = '\\'
 	for len(p) > 0 {
-		_, s := utf8.DecodeRune(p)
-		t = toWrite[:2]
-		if s > 1 || (p[0] >= 0x20 && p[0] < 0x7f) {
-			copy(toWrite[1:], p[:s])
-			if p[0] != '"' && p[0] != '\\' {
-				t = toWrite[1:2]
+		dr, s := utf8.DecodeRune(p)
+		if dr != utf8.RuneError && (s > 1 || (p[0] >= 0x20 && p[0] < 0x7f)) {
+			t = append(toWrite[1:1], p[:s]...)
+			if p[0] == '"' || p[0] == '\\' {
+				t = toWrite[:2]
 			}
 		} else {
+			t = toWrite[:2]
 			switch p[0] {
 			case '\a':
 				toWrite[1] = 'a'
@@ -94,7 +94,7 @@ func (r tickReplacer) Write(p []byte) (int, error) {
 	toWrite := make([]byte, 0, 1024)
 	for len(p) > 0 {
 		dr, s := utf8.DecodeRune(p)
-		if dr == utf8.RuneError || dr == '`' {
+		if dr == utf8.RuneError || dr == '`' || dr == '\r' {
 			hexes = append(hexes, p[0])
 		} else {
 			if len(hexes) > 0 {
@@ -103,6 +103,8 @@ func (r tickReplacer) Write(p []byte) (int, error) {
 				for _, b := range hexes {
 					if b == '`' {
 						toWrite = append(toWrite, '`')
+					} else if b == '\r' {
+						toWrite = append(toWrite, '\\', 'r')
 					} else {
 						toWrite = append(toWrite, '\\', 'x', hexArr[b>>4], hexArr[b&15])
 					}
