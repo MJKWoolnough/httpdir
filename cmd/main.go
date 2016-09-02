@@ -14,6 +14,7 @@ var (
 	pkg     = flag.String("p", "main", "package name")
 	in      = flag.String("i", "", "input filename")
 	out     = flag.String("o", "", "output filename")
+	path    = flag.String("w", "", "http path")
 	varname = flag.String("v", "httpdir.Default", "http dir variable name")
 	help    = flag.Bool("h", false, "show help")
 	comp    = flag.Bool("c", false, "compress using gzip")
@@ -125,8 +126,11 @@ func main() {
 	fo, err := os.Create(*out)
 	errHandler(err)
 	defer fo.Close()
+	if *path == "" {
+		path = in
+	}
 	if *comp {
-		_, err = fmt.Fprintf(fo, compressedStart, *pkg, *varname, *in)
+		_, err = fmt.Fprintf(fo, compressedStart, *pkg, *varname, *path)
 		errHandler(err)
 		w, err := gzip.NewWriterLevel(replacer{fo}, gzip.BestCompression)
 		errHandler(err)
@@ -136,7 +140,7 @@ func main() {
 		_, err = fmt.Fprintf(fo, compressedEnd, stat.ModTime().Unix(), stat.Size())
 		errHandler(err)
 	} else {
-		_, err = fmt.Fprintf(fo, uncompressedStart, *pkg, *varname, *in)
+		_, err = fmt.Fprintf(fo, uncompressedStart, *pkg, *varname, *path)
 		errHandler(err)
 		_, err = io.Copy(tickReplacer{fo}, fi)
 		errHandler(err)
