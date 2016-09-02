@@ -3,6 +3,7 @@ package httpdir
 import (
 	"bytes"
 	"compress/gzip"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -145,13 +146,9 @@ func Compressed(d Dir, name string, node Node, size int) error {
 	defer g.Close()
 	buf := make([]byte, size)
 
-	var read int
-	for read < size {
-		n, err := g.Read(buf[read:])
-		if err != nil {
-			return err
-		}
-		read += n
+	_, err = io.ReadFull(g, buf)
+	if err != nil {
+		return err
 	}
 
 	d.Create(name+".gz", node)
