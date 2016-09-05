@@ -120,7 +120,7 @@ func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
 
 // Create places a Node into the directory tree.
 //
-// Any non-existant directories will be created automatically, setting the
+// Any non-existent directories will be created automatically, setting the
 // modTime to that of the Node and the index to false.
 //
 // If you want to specify alternate modTime/index values for the directories,
