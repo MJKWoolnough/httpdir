@@ -82,7 +82,7 @@ func TestDirectory(t *testing.T) {
 	if c[0].Name() != "file2" {
 		t.Errorf("expecting file with name \"file2\", got %q", c[0].Name())
 	}
-	c, err = f.Readdir(1)
+	_, err = f.Readdir(1)
 	if err != io.EOF {
 		t.Errorf("expected error EOF, got %s", err)
 		return
