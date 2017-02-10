@@ -59,11 +59,11 @@ func (directory) Read([]byte) (int, error) {
 func (d *directory) Seek(offset int64, whence int) (int64, error) {
 	pos := int64(d.pos)
 	switch whence {
-	case os.SEEK_SET:
+	case io.SeekStart:
 		pos = offset
-	case os.SEEK_CUR:
+	case io.SeekCurrent:
 		pos += offset
-	case os.SEEK_END:
+	case io.SeekEnd:
 		pos = int64(len(d.contents)) - offset
 	}
 	if pos != 0 {
