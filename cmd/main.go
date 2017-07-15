@@ -37,7 +37,10 @@ func (r replacer) Write(p []byte) (int, error) {
 	n := 0
 	toWrite := make([]byte, 0, 5)
 	for len(p) > 0 {
-		_, s := utf8.DecodeRune(p)
+		rn, s := utf8.DecodeRune(p)
+		if rn == 0xfeff {
+			s = 1
+		}
 		if s > 1 || (p[0] > 0 && p[0] < 0x7f && p[0] != '\n' && p[0] != '\\' && p[0] != '"') {
 			toWrite = append(toWrite[:0], p[:s]...)
 		} else {
