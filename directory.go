@@ -64,7 +64,7 @@ func (d *directory) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekCurrent:
 		pos += offset
 	case io.SeekEnd:
-		pos = int64(len(d.contents)) - offset
+		pos = int64(len(d.contents)) + offset
 	}
 	if pos != 0 {
 		return 0, os.ErrInvalid
