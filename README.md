@@ -66,7 +66,7 @@ func (d Dir) Create(name string, n Node) error
 ```
 Create places a Node into the directory tree.
 
-Any non-existant directories will be created automatically, setting the modTime
+Any non-existent directories will be created automatically, setting the modTime
 to that of the Node and the index to false.
 
 If you want to specify alternate modTime/index values for the directories, then
