@@ -2,8 +2,6 @@ package httpdir
 
 import (
 	"bytes"
-	"compress/gzip"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -129,6 +127,7 @@ func (o OSFile) Open() (File, error) {
 	return os.Open(string(o))
 }
 
+/*
 // Compressed adds the given node to the Directory tree and gzip decompresses
 // it into a FileBytes and also adds it to the tree.
 //
@@ -155,3 +154,4 @@ func Compressed(d Dir, name string, node Node, size int) error {
 	d.Create(name, FileBytes(buf, node.ModTime()))
 	return nil
 }
+*/

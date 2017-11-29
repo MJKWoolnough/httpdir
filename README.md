@@ -19,16 +19,6 @@ var Default = New(time.Now())
 ```
 Default is the Dir used by the top-level functions
 
-#### func  Compressed
-
-```go
-func Compressed(d Dir, name string, node Node, size int) error
-```
-Compressed adds the given node to the Directory tree and gzip decompresses it
-into a FileBytes and also adds it to the tree.
-
-NB: The compressed version has .gz appended to its name
-
 #### func  Create
 
 ```go
