@@ -356,7 +356,7 @@ func init() {
 	fl.Close()
 	%s.Create(%q, httpdir.FileString(s, date))
 `
-	flateCompress = `	flb := make([]memio.Buffer, 0, %d)
+	flateCompress = `	flb := make(memio.Buffer, 0, %d)
 	fl, _ := flate.NewWriter(&flb, flate.BestCompression)
 	fl.Write(b)
 	fl.Close()
@@ -369,8 +369,8 @@ func init() {
 	gz.Close()
 	%s.Create(%q, httpdir.FileString(s, date))
 `
-	gzipCompress = `	gzb := make([]memio.Buffer, 0, %d)
-	gz := gzip.NewWriterLevel(&gzb, gzip.BestCompression)
+	gzipCompress = `	gzb := make(memio.Buffer, 0, %d)
+	gz, _ := gzip.NewWriterLevel(&gzb, gzip.BestCompression)
 	gz.Write(b)
 	gz.Close()
 	%s.Create(%q, httpdir.FileBytes(gzb, date))
