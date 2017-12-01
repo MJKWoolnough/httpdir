@@ -183,7 +183,7 @@ func main() {
 	e(err)
 	e(f.Close())
 
-	im := imports{"\"github.com/MJKWoolnough/httpdir\""}
+	im := imports{"\"github.com/MJKWoolnough/httpdir\"", "\"time\""}
 
 	if *single && (*gzcomp || *brcomp || *flcomp) {
 		im = append(im, "\"github.com/MJKWoolnough/memio\"", "\"strings\"")
@@ -257,7 +257,7 @@ func main() {
 	}
 	f, err = os.Create(*out)
 	e(err)
-	fmt.Fprintf(f, packageStart, pkg, imports, date)
+	fmt.Fprintf(f, packageStart, *pkg, imports, date)
 	if *single {
 		f.WriteString(stringStart)
 		if encs[0].Ext == "" {
@@ -277,6 +277,11 @@ func main() {
 			)
 			if enc.Ext == "" {
 				vars = vars[1:]
+				if n == 0 {
+					templ = identDecompress
+				} else {
+					templ = identCompress
+				}
 			} else {
 				if n == 0 {
 					vars[0] = len(data)
@@ -312,7 +317,7 @@ const (
 	packageStart = `package %s
 
 import (
-	%s)
+%s)
 
 func init() {
 	date := time.Unix(%d, 0)
