@@ -1,13 +1,19 @@
 package main
 
 import (
+	"compress/flate"
 	"compress/gzip"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"sort"
+	"strings"
 	"unicode/utf8"
+
+	"github.com/MJKWoolnough/memio"
+	"github.com/google/brotli/go/cbrotli"
 )
 
 var (
@@ -17,15 +23,11 @@ var (
 	path    = flag.String("w", "", "http path")
 	varname = flag.String("v", "httpdir.Default", "http dir variable name")
 	help    = flag.Bool("h", false, "show help")
-	comp    = flag.Bool("c", false, "compress using gzip")
+	gzcomp  = flag.Bool("g", false, "compress using gzip")
+	brcomp  = flag.Bool("b", false, "compress using brotli")
+	flcomp  = flag.Bool("f", false, "compress using flate/deflate")
+	single  = flag.Bool("s", false, "use single source var and decompress/compress for others")
 )
-
-func errHandler(err error) {
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-}
 
 type replacer struct {
 	f *os.File
@@ -38,7 +40,7 @@ func (r replacer) Write(p []byte) (int, error) {
 	toWrite := make([]byte, 0, 5)
 	for len(p) > 0 {
 		rn, s := utf8.DecodeRune(p)
-		if rn == 0xfeff {
+		if rn == utf8.RuneError {
 			s = 1
 		}
 		if s > 1 || (p[0] > 0 && p[0] < 0x7f && p[0] != '\n' && p[0] != '\\' && p[0] != '"') {
@@ -112,6 +114,55 @@ func (r tickReplacer) Write(p []byte) (int, error) {
 	return n, err
 }
 
+func e(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+}
+
+func ne(_ int, err error) {
+	e(err)
+}
+
+type imports []string
+
+func (im imports) Len() int {
+	return len(im)
+}
+
+func (im imports) Less(i, j int) bool {
+	si := strings.HasPrefix(im[i], "github.com")
+	sj := strings.HasPrefix(im[j], "github.com")
+	if si == sj {
+		return im[i] < im[j]
+	}
+	return si
+}
+
+func (im imports) Swap(i, j int) {
+	im[i], im[j] = im[j], im[i]
+}
+
+type encoding struct {
+	Buffer                    []byte
+	Compress, Decompress, Ext string
+}
+
+type encodings []encoding
+
+func (e encodings) Len() int {
+	return len(e)
+}
+
+func (e encodings) Less(i, j int) bool {
+	return len(e[i].Buffer) < len(e[j].Buffer)
+}
+
+func (e encodings) Swap(i, j int) {
+	e[i], e[j] = e[j], e[i]
+}
+
 func main() {
 	flag.Parse()
 	if *help {
@@ -119,67 +170,204 @@ func main() {
 		return
 	}
 	if *in == "" || *out == "" {
-		errHandler(errors.New("missing in/out file"))
+		e(errors.New("missing in/out file"))
 	}
-	fi, err := os.Open(*in)
-	errHandler(err)
-	defer fi.Close()
-	stat, err := fi.Stat()
-	errHandler(err)
-	fo, err := os.Create(*out)
-	errHandler(err)
-	defer fo.Close()
-	if *path == "" {
-		path = in
+	f, err := os.Open(*in)
+	e(err)
+	fi, err := f.Stat()
+	e(err)
+	date := fi.ModTime().Unix()
+
+	data := make(memio.Buffer, 0, 1<<20)
+	_, err = io.Copy(&data, f)
+	e(err)
+	e(f.Close())
+
+	im := imports{"\"github.com/MJKWoolnough/httpdir\""}
+
+	if *single && (*gzcomp || *brcomp || *flcomp) {
+		im = append(im, "\"github.com/MJKWoolnough/memio\"", "\"strings\"")
 	}
-	if *comp {
-		_, err = fmt.Fprintf(fo, compressedStart, *pkg, *varname, *path)
-		errHandler(err)
-		w, err := gzip.NewWriterLevel(replacer{fo}, gzip.BestCompression)
-		errHandler(err)
-		_, err = io.Copy(w, fi)
-		errHandler(err)
-		errHandler(w.Close())
-		_, err = fmt.Fprintf(fo, compressedEnd, stat.ModTime().Unix(), stat.Size())
-		errHandler(err)
+
+	encs := make(encodings, 1, 4)
+	encs[0] = encoding{
+		Buffer:     data,
+		Compress:   identCompress,
+		Decompress: identDecompress,
+		Ext:        "",
+	}
+
+	if *brcomp {
+		var b memio.Buffer
+		br := cbrotli.NewWriter(&b, cbrotli.WriterOptions{Quality: 11})
+		br.Write(data)
+		br.Close()
+		if *single {
+			im = append(im, brotliImport)
+		}
+		encs = append(encs, encoding{
+			Buffer:     b,
+			Compress:   brotliCompress,
+			Decompress: brotliDecompress,
+			Ext:        ".br",
+		})
+	}
+	if *flcomp {
+		var b memio.Buffer
+		fl, _ := flate.NewWriter(&b, flate.BestCompression)
+		fl.Write(data)
+		fl.Close()
+		if *single {
+			im = append(im, flateImport)
+		}
+		encs = append(encs, encoding{
+			Buffer:     b,
+			Compress:   flateCompress,
+			Decompress: flateDecompress,
+			Ext:        ".fl",
+		})
+	}
+	if *gzcomp {
+		var b memio.Buffer
+		gz, _ := gzip.NewWriterLevel(&b, gzip.BestCompression)
+		gz.Write(data)
+		gz.Close()
+		if *single {
+			im = append(im, gzipImport)
+		}
+		encs = append(encs, encoding{
+			Buffer:     b,
+			Compress:   gzipCompress,
+			Decompress: gzipDecompress,
+			Ext:        ".gz",
+		})
+	}
+	sort.Sort(im)
+	sort.Sort(encs)
+	var (
+		imports string
+		ext     bool
+	)
+	for _, i := range im {
+		if !ext && strings.HasPrefix(i, "github.com") {
+			imports += "\n"
+			ext = true
+		}
+		imports += "	" + i + "\n"
+	}
+	f, err = os.Create(*out)
+	e(err)
+	fmt.Fprintf(f, packageStart, pkg, imports, date)
+	if *single {
+		f.WriteString(stringStart)
+		if encs[0].Ext == "" {
+			ne(f.WriteString("`"))
+			ne(tickReplacer{f}.Write(encs[0].Buffer))
+			ne(f.WriteString("`"))
+		} else {
+			ne(f.WriteString("\""))
+			ne(replacer{f}.Write(encs[0].Buffer))
+			ne(f.WriteString("\""))
+		}
+		f.WriteString(stringEnd)
+		for n, enc := range encs {
+			var (
+				templ string
+				vars  = []interface{}{0, *varname, *path + enc.Ext}
+			)
+			if enc.Ext == "" {
+				vars = vars[1:]
+			} else {
+				if n == 0 {
+					vars[0] = len(data)
+					templ = enc.Decompress
+				} else {
+					vars[0] = len(enc.Buffer)
+					templ = enc.Compress
+				}
+			}
+			fmt.Fprintf(f, templ, vars...)
+		}
 	} else {
-		_, err = fmt.Fprintf(fo, uncompressedStart, *pkg, *varname, *path)
-		errHandler(err)
-		_, err = io.Copy(tickReplacer{fo}, fi)
-		errHandler(err)
-		_, err = fmt.Fprintf(fo, uncompressedEnd, stat.ModTime().Unix())
-		errHandler(err)
+		for _, enc := range encs {
+			filename := *path + enc.Ext
+			ne(fmt.Fprintf(f, soloStart, *varname, filename))
+			if enc.Ext == "" {
+				ne(f.WriteString("`"))
+				ne(tickReplacer{f}.Write(enc.Buffer))
+				ne(f.WriteString("`"))
+			} else {
+				ne(f.WriteString("\""))
+				ne(replacer{f}.Write(enc.Buffer))
+				ne(f.WriteString("\""))
+			}
+			ne(f.WriteString(soloEnd))
+		}
 	}
+	ne(fmt.Fprintf(f, packageEnd))
+	e(f.Close())
 }
 
 const (
-	uncompressedStart = `package %s
+	packageStart = `package %s
 
 import (
-	"time"
-
-	"github.com/MJKWoolnough/httpdir"
-)
+	%s)
 
 func init() {
-	%s.Create(%q, httpdir.FileString(` + "`"
-	uncompressedEnd = "`" + `, time.Unix(%d, 0)))
-}
+	date := time.Unix(%d, 0)
+`
+	stringStart = `	s := `
+	stringEnd   = `
+`
+	packageEnd = `}
+`
+	soloStart = `	%s.Create(%q, httpdir.FileString(`
+	soloEnd   = `, date))
+`
+	identDecompress = `	b := []byte(s)
+	%s.Create(%q, httpdir.FileString(s, date))
+`
+	identCompress = `	%s.Create(%q, httpdir.FileBytes(b, date))
 `
 
-	compressedStart = `package %s
-
-import (
-	"time"
-
-	"github.com/MJKWoolnough/httpdir"
-)
-
-func init() {
-	if err := httpdir.Compressed(%s, %q, httpdir.FileString("`
-	compressedEnd = `", time.Unix(%d, 0)), %d); err != nil {
-		panic(err)
-	}
-}
+	brotliImport     = "\"github.com/google/brotli/go/cbrotli\""
+	brotliDecompress = `	b := make([]byte, %d)
+	br := cbrotli.NewReader(strings.NewReader(s))
+	br.Read(b)
+	br.Close()
+	%s.Create(%q, httpdir.FileString(s, date))
+`
+	brotliCompress = `	brb := make(memio.Buffer, 0, %d)
+	br := cbrotli.NewWriter(&brb, cbrotli.WriterOptions{Quality: 11})
+	br.Write(b)
+	br.Close()
+	%s.Create(%q, httpdir.FileBytes(brb, date))
+`
+	flateImport     = "\"compress/flate\""
+	flateDecompress = `	b := make([]byte, %d)
+	fl := flate.NewReader(strings.NewReader(s))
+	fl.Read(b)
+	fl.Close()
+	%s.Create(%q, httpdir.FileString(s, date))
+`
+	flateCompress = `	flb := make([]memio.Buffer, 0, %d)
+	fl, _ := flate.NewWriter(&flb, flate.BestCompression)
+	fl.Write(b)
+	fl.Close()
+	%s.Create(%q, httpdir.FileBytes(flb, date))
+`
+	gzipImport     = "\"compress/gzip\""
+	gzipDecompress = `	b := make([]byte, %d)
+	gz := gzip.NewReader(strings.NewReader(s))
+	gz.Read(b)
+	gz.Close()
+	%s.Create(%q, httpdir.FileString(s, date))
+`
+	gzipCompress = `	gzb := make([]memio.Buffer, 0, %d)
+	gz := gzip.NewWriterLevel(&gzb, gzip.BestCompression)
+	gz.Write(b)
+	gz.Close()
+	%s.Create(%q, httpdir.FileBytes(gzb, date))
 `
 )
