@@ -218,7 +218,7 @@ func main() {
 		fl.Write(data)
 		fl.Close()
 		if *single {
-			im = append(im, flateImport)
+			im = append(im, strings.Split(flateImport, "\n")...)
 		}
 		encs = append(encs, encoding{
 			Buffer:     b,
@@ -349,10 +349,10 @@ func init() {
 	br.Close()
 	%s.Create(%q, httpdir.FileBytes(brb, date))
 `
-	flateImport     = "\"compress/flate\""
+	flateImport     = "\"compress/flate\"\n\"io\""
 	flateDecompress = `	b := make([]byte, %d)
 	fl := flate.NewReader(strings.NewReader(s))
-	fl.Read(b)
+	io.ReadFull(fl, b)
 	fl.Close()
 	%s.Create(%q, httpdir.FileString(s, date))
 `
