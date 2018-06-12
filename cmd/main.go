@@ -1,4 +1,4 @@
-package main
+package main // import "vimagination.zapto.org/httpdir/cmd"
 
 import (
 	"compress/flate"
@@ -12,21 +12,22 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/MJKWoolnough/memio"
 	"github.com/google/brotli/go/cbrotli"
+	"vimagination.zapto.org/memio"
 )
 
 var (
-	pkg     = flag.String("p", "main", "package name")
-	in      = flag.String("i", "", "input filename")
-	out     = flag.String("o", "", "output filename")
-	path    = flag.String("w", "", "http path")
-	varname = flag.String("v", "httpdir.Default", "http dir variable name")
-	help    = flag.Bool("h", false, "show help")
-	gzcomp  = flag.Bool("g", false, "compress using gzip")
-	brcomp  = flag.Bool("b", false, "compress using brotli")
-	flcomp  = flag.Bool("f", false, "compress using flate/deflate")
-	single  = flag.Bool("s", false, "use single source var and decompress/compress for others")
+	pkg      = flag.String("p", "main", "package name")
+	in       = flag.String("i", "", "input filename")
+	out      = flag.String("o", "", "output filename")
+	path     = flag.String("w", "", "http path")
+	varname  = flag.String("v", "httpdir.Default", "http dir variable name")
+	cvarname = flag.String("c", "httpdir.Default", "http dir compressed variable name")
+	help     = flag.Bool("h", false, "show help")
+	gzcomp   = flag.Bool("g", false, "compress using gzip")
+	brcomp   = flag.Bool("b", false, "compress using brotli")
+	flcomp   = flag.Bool("f", false, "compress using flate/deflate")
+	single   = flag.Bool("s", false, "use single source var and decompress/compress for others")
 )
 
 type replacer struct {
@@ -183,10 +184,10 @@ func main() {
 	e(err)
 	e(f.Close())
 
-	im := imports{"\"github.com/MJKWoolnough/httpdir\"", "\"time\""}
+	im := imports{"\"vimagination.zapto.org/httpdir\"", "\"time\""}
 
 	if *single && (*gzcomp || *brcomp || *flcomp) {
-		im = append(im, "\"github.com/MJKWoolnough/memio\"", "\"strings\"")
+		im = append(im, "\"vimagination.zapto.org/memio\"", "\"strings\"")
 	}
 
 	encs := make(encodings, 1, 4)
@@ -273,10 +274,11 @@ func main() {
 		for n, enc := range encs {
 			var (
 				templ string
-				vars  = []interface{}{0, *varname, *path + enc.Ext}
+				vars  = []interface{}{0, *cvarname, *path + enc.Ext}
 			)
 			if enc.Ext == "" {
 				vars = vars[1:]
+				vars[0] = *varname
 				if n == 0 {
 					templ = identDecompress
 				} else {

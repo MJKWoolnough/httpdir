@@ -1,5 +1,5 @@
 // Package httpdir provides an in-memory implementation of http.FileSystem
-package httpdir
+package httpdir // import "vimagination.zapto.org/httpdir"
 
 import (
 	"io"
