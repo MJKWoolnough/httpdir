@@ -186,10 +186,6 @@ func main() {
 
 	im := imports{"\"vimagination.zapto.org/httpdir\"", "\"time\""}
 
-	if *single && (*gzcomp || *brcomp || *flcomp) {
-		im = append(im, "\"vimagination.zapto.org/memio\"", "\"strings\"")
-	}
-
 	encs := make(encodings, 1, 4)
 	encs[0] = encoding{
 		Buffer:     data,
@@ -243,8 +239,20 @@ func main() {
 			Ext:        ".gz",
 		})
 	}
-	sort.Sort(im)
+
 	sort.Sort(encs)
+
+	if *single && (*gzcomp || *brcomp || *flcomp) {
+		im = append(im, "\"vimagination.zapto.org/memio\"")
+		if encs[0].Ext != "" {
+			im = append(im, "\"strings\"")
+		}
+	}
+	if encs[0].Ext == ".fl" {
+		im = append(im, "\"io\"")
+	}
+
+	sort.Sort(im)
 	var (
 		imports string
 		ext     bool
@@ -351,7 +359,7 @@ func init() {
 	br.Close()
 	%s.Create(%q, httpdir.FileBytes(brb, date))
 `
-	flateImport     = "\"compress/flate\"\n\"io\""
+	flateImport     = "\"compress/flate\""
 	flateDecompress = `	b := make([]byte, %d)
 	fl := flate.NewReader(strings.NewReader(s))
 	io.ReadFull(fl, b)
