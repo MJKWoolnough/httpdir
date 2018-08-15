@@ -135,10 +135,12 @@ func (im imports) Len() int {
 func (im imports) Less(i, j int) bool {
 	si := strings.HasPrefix(im[i], "\"github.com")
 	sj := strings.HasPrefix(im[j], "\"github.com")
-	if si == sj {
+	vi := strings.HasPrefix("\"vimagination.zapto.org")
+	vj := strings.HasPrefix("\"vimagination.zapto.org")
+	if si == sj && vi == vj {
 		return im[i] < im[j]
 	}
-	return !si
+	return !si || !vi
 }
 
 func (im imports) Swap(i, j int) {
