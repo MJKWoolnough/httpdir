@@ -183,7 +183,7 @@ func main() {
 		f = os.Stdin
 		date = time.Now().Unix()
 	} else {
-		f, err := os.Open(*in)
+		f, err = os.Open(*in)
 		e(err)
 		fi, err := f.Stat()
 		e(err)
