@@ -1,15 +1,16 @@
-package main // import "vimagination.zapto.org/httpdir/cmd"
+package main // import "vimagination.zapto.org/httpdir/cmd/httpdir"
 
 import (
 	"compress/flate"
 	"compress/gzip"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/brotli/go/cbrotli"
@@ -20,6 +21,7 @@ var (
 	pkg      = flag.String("p", "main", "package name")
 	in       = flag.String("i", "", "input filename")
 	out      = flag.String("o", "", "output filename")
+	odate    = flag.String("d", "", "modified date [seconds since epoch]")
 	path     = flag.String("w", "", "http path")
 	varname  = flag.String("v", "httpdir.Default", "http dir variable name")
 	cvarname = flag.String("c", "httpdir.Default", "http dir compressed variable name")
@@ -135,8 +137,8 @@ func (im imports) Len() int {
 func (im imports) Less(i, j int) bool {
 	si := strings.HasPrefix(im[i], "\"github.com")
 	sj := strings.HasPrefix(im[j], "\"github.com")
-	vi := strings.HasPrefix("\"vimagination.zapto.org")
-	vj := strings.HasPrefix("\"vimagination.zapto.org")
+	vi := strings.HasPrefix(im[i], "\"vimagination.zapto.org")
+	vj := strings.HasPrefix(im[j], "\"vimagination.zapto.org")
 	if si == sj && vi == vj {
 		return im[i] < im[j]
 	}
@@ -172,14 +174,25 @@ func main() {
 		flag.Usage()
 		return
 	}
-	if *in == "" || *out == "" {
-		e(errors.New("missing in/out file"))
+	var (
+		f    *os.File
+		err  error
+		date int64
+	)
+	if *in == "-" || *in == "" {
+		f = os.Stdin
+		date = time.Now().Unix()
+	} else {
+		f, err := os.Open(*in)
+		e(err)
+		fi, err := f.Stat()
+		e(err)
+		date = fi.ModTime().Unix()
 	}
-	f, err := os.Open(*in)
-	e(err)
-	fi, err := f.Stat()
-	e(err)
-	date := fi.ModTime().Unix()
+	if *odate != "" {
+		date, err = strconv.ParseInt(*odate, 10, 64)
+		e(err)
+	}
 
 	data := make(memio.Buffer, 0, 1<<20)
 	_, err = io.Copy(&data, f)
@@ -266,8 +279,12 @@ func main() {
 		}
 		imports += "	" + i + "\n"
 	}
-	f, err = os.Create(*out)
-	e(err)
+	if *out == "-" || *out == "" {
+		f = os.Stdout
+	} else {
+		f, err = os.Create(*out)
+		e(err)
+	}
 	fmt.Fprintf(f, packageStart, *pkg, imports, date)
 	if *single {
 		f.WriteString(stringStart)
