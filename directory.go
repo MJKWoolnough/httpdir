@@ -43,6 +43,15 @@ func (d dir) Open() (File, error) {
 	return dir, nil
 }
 
+func (d dir) Remove(name string) error {
+	_, ok := d.contents[name]
+	if !ok {
+		return os.ErrNotExist
+	}
+	delete(d.contents, name)
+	return nil
+}
+
 type directory struct {
 	contents []os.FileInfo
 	pos      int

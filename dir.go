@@ -29,6 +29,11 @@ func Create(name string, n Node) error {
 	return Default.Create(name, n)
 }
 
+// Remove is a convenience function for Default.Remove
+func Remove(name string) error {
+	return Default.Remove(name)
+}
+
 // Dir is the start of a simple in-memory filesystem tree
 type Dir struct {
 	d dir
@@ -49,6 +54,14 @@ func New(t time.Time) Dir {
 // This method is the implementation of http.FileSystem and isn't intended to
 // be used by clients of this package.
 func (d Dir) Open(name string) (http.File, error) {
+	n, err := d.get(name)
+	if err != nil {
+		return nil, err
+	}
+	return n.Open()
+}
+
+func (d Dir) get(name string) (namedNode, error) {
 	name = path.Clean(name)
 	if len(name) > 0 && name[0] == '/' {
 		name = name[1:]
@@ -58,16 +71,16 @@ func (d Dir) Open(name string) (http.File, error) {
 		for _, part := range strings.Split(name, "/") {
 			nd, ok := n.Node.(dir)
 			if !ok {
-				return nil, os.ErrInvalid
+				return namedNode{}, os.ErrInvalid
 			}
 			dn, ok := nd.contents[part]
 			if !ok {
-				return nil, os.ErrNotExist
+				return namedNode{}, os.ErrNotExist
 			}
 			n = namedNode{part, dn}
 		}
 	}
-	return n.Open()
+	return n, nil
 }
 
 // Mkdir creates the named directory, and any parent directories required.
@@ -136,6 +149,21 @@ func (d Dir) Create(name string, n Node) error {
 	}
 	dn.contents[fname] = n
 	return nil
+}
+
+// Remove will remove a node from the tree.
+//
+// It will removed files and any directories, whether they are empty or not.
+func (d Dir) Remove(name string) error {
+	dname, fname := path.Split(name)
+	nn, err := d.get(dname)
+	if err != nil {
+		return err
+	}
+	if nd, ok := nn.Node.(dir); ok {
+		return nd.Remove(fname)
+	}
+	return os.ErrInvalid
 }
 
 // Node represents a data file in the tree
