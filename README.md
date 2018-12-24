@@ -1,6 +1,6 @@
 # httpdir
 --
-    import "github.com/MJKWoolnough/httpdir"
+    import "vimagination.zapto.org/httpdir"
 
 Package httpdir provides an in-memory implementation of http.FileSystem
 
@@ -32,6 +32,13 @@ Create is a convenience function for Default.Create
 func Mkdir(name string, modTime time.Time, index bool) error
 ```
 Mkdir is a convenience function for Default.Mkdir
+
+#### func  Remove
+
+```go
+func Remove(name string) error
+```
+Remove is a convenience function for Default.Remove
 
 #### type Dir
 
@@ -89,6 +96,15 @@ Open returns the file, or directory, specified by the given name.
 
 This method is the implementation of http.FileSystem and isn't intended to be
 used by clients of this package.
+
+#### func (Dir) Remove
+
+```go
+func (d Dir) Remove(name string) error
+```
+Remove will remove a node from the tree.
+
+It will removed files and any directories, whether they are empty or not.
 
 #### type File
 
