@@ -57,4 +57,19 @@ func TestDir(t *testing.T) {
 	if string(data[:n]) != "Hello, World!" {
 		t.Errorf("expecting string \"Hello, World!\", got %q", data[:n])
 	}
+	err = d.Remove("/dir3/test/hello")
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	if len(d.d.contents["dir3"].(dir).contents["test"].(dir).contents) != 0 {
+		t.Errorf("did not delete '/dir3/test/hello'")
+		return
+	}
+	err = d.Remove("/dir3")
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	if len(d.d.contents) != 2 { //dir && dir2 remain
+		t.Errorf("did not delete '/dir3'")
+	}
 }
