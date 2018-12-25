@@ -153,7 +153,10 @@ func (d Dir) Create(name string, n Node) error {
 
 // Remove will remove a node from the tree.
 //
-// It will removed files and any directories, whether they are empty or not.
+// It will remove files and any directories, whether they are empty or not.
+//
+// Caution: httpdir does no internal locking, so you should provide your own if
+// you intend to call this method.
 func (d Dir) Remove(name string) error {
 	dname, fname := path.Split(name)
 	nn, err := d.get(dname)
