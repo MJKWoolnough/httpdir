@@ -142,7 +142,7 @@ func (im imports) Less(i, j int) bool {
 	if si == sj && vi == vj {
 		return im[i] < im[j]
 	}
-	return !si || !vi
+	return !si && !vi || si && vj
 }
 
 func (im imports) Swap(i, j int) {
@@ -273,7 +273,7 @@ func main() {
 		ext     bool
 	)
 	for _, i := range im {
-		if !ext && strings.HasPrefix(i, "\"github.com") {
+		if !ext && (strings.HasPrefix(i, "\"github.com") || strings.HasPrefix(i, "\"vimagination")) {
 			imports += "\n"
 			ext = true
 		}
