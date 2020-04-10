@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/foobaz/go-zopfli/zopfli"
 	"github.com/google/brotli/go/cbrotli"
 	"vimagination.zapto.org/memio"
 )
@@ -30,6 +31,7 @@ var (
 	brcomp   = flag.Bool("b", false, "compress using brotli")
 	flcomp   = flag.Bool("f", false, "compress using flate/deflate")
 	single   = flag.Bool("s", false, "use single source var and decompress/compress for others")
+	zpfcomp  = flag.Bool("z", false, "replace gzip with zopfli compression")
 )
 
 type replacer struct {
@@ -239,11 +241,19 @@ func main() {
 			Ext:        ".fl",
 		})
 	}
-	if *gzcomp {
+	if *gzcomp || *zpfcomp {
 		var b memio.Buffer
-		gz, _ := gzip.NewWriterLevel(&b, gzip.BestCompression)
-		gz.Write(data)
-		gz.Close()
+		if *zpfcomp {
+			zopfli.GzipCompress(&zopfli.Options{
+				NumIterations:  100,
+				BlockSplitting: true,
+				BlockType:      2,
+			}, data, &b)
+		} else {
+			gz, _ := gzip.NewWriterLevel(&b, gzip.BestCompression)
+			gz.Write(data)
+			gz.Close()
+		}
 		if *single {
 			im = append(im, gzipImport)
 		}
