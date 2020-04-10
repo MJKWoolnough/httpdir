@@ -403,7 +403,7 @@ func init() {
 `
 	gzipImport     = "\"compress/gzip\""
 	gzipDecompress = `	b := make([]byte, %d)
-	gz := gzip.NewReader(strings.NewReader(s))
+	gz, _ := gzip.NewReader(strings.NewReader(s))
 	gz.Read(b)
 	gz.Close()
 	%s.Create(%q, httpdir.FileString(s, date))
