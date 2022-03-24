@@ -1,0 +1,6 @@
+github.com/foobaz/go-zopfli v0.0.0-20140122214029-7432051485e2 h1:VA6jElpcJ+wkwEBufbnVkSBCA2TEnxdRppjRT5Kvh0A=
+github.com/foobaz/go-zopfli v0.0.0-20140122214029-7432051485e2/go.mod h1:Yi95+RbwKz7uGndSuUhoq7LJKh8qH8DT9fnL4ewU30k=
+github.com/google/brotli/go/cbrotli v0.0.0-20220110100810-f4153a09f87c h1:r47YgJ24CPvKxwxxHYPuE+FX1GgNtV93E7uaknKW0HU=
+github.com/google/brotli/go/cbrotli v0.0.0-20220110100810-f4153a09f87c/go.mod h1:nOPhAkwVliJdNTkj3gXpljmWhjc4wCaVqbMJcPKWP4s=
+vimagination.zapto.org/memio v1.0.0 h1:r0GDf430aNuGpOAV57UTvbUzAf82UclRyGG/pBp1uvU=
+vimagination.zapto.org/memio v1.0.0/go.mod h1:zHGDKp2tyvF4IAfLti4pKYqCJucXYmmKMb3UMrCHK/4=
