@@ -2,7 +2,7 @@ package httpdir
 
 import (
 	"io"
-	"os"
+	"io/fs"
 	"sort"
 	"time"
 )
@@ -17,7 +17,7 @@ func (d dir) Size() int64 {
 	return 0
 }
 
-func (dir) Mode() os.FileMode {
+func (dir) Mode() fs.FileMode {
 	return ModeDir
 }
 
@@ -30,9 +30,9 @@ func (d dir) Open() (File, error) {
 		if f, ok := d.contents["index.html"]; ok {
 			return f.Open()
 		}
-		return nil, os.ErrPermission
+		return nil, fs.ErrPermission
 	}
-	contents := make([]os.FileInfo, 0, len(d.contents))
+	contents := make([]fs.FileInfo, 0, len(d.contents))
 	for name, node := range d.contents {
 		contents = append(contents, namedNode{name, node})
 	}
@@ -46,14 +46,14 @@ func (d dir) Open() (File, error) {
 func (d dir) Remove(name string) error {
 	_, ok := d.contents[name]
 	if !ok {
-		return os.ErrNotExist
+		return fs.ErrNotExist
 	}
 	delete(d.contents, name)
 	return nil
 }
 
 type directory struct {
-	contents []os.FileInfo
+	contents []fs.FileInfo
 	pos      int
 }
 
@@ -62,7 +62,7 @@ func (directory) Close() error {
 }
 
 func (directory) Read([]byte) (int, error) {
-	return 0, os.ErrInvalid
+	return 0, fs.ErrInvalid
 }
 
 func (d *directory) Seek(offset int64, whence int) (int64, error) {
@@ -76,13 +76,13 @@ func (d *directory) Seek(offset int64, whence int) (int64, error) {
 		pos = int64(len(d.contents)) + offset
 	}
 	if pos != 0 {
-		return 0, os.ErrInvalid
+		return 0, fs.ErrInvalid
 	}
 	d.pos = 0
 	return 0, nil
 }
 
-func (d *directory) Readdir(n int) ([]os.FileInfo, error) {
+func (d *directory) Readdir(n int) ([]fs.FileInfo, error) {
 	if n < 0 || d.pos+n > len(d.contents) {
 		n = len(d.contents) - d.pos
 	}

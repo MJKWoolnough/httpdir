@@ -2,6 +2,7 @@ package httpdir
 
 import (
 	"bytes"
+	"io/fs"
 	"os"
 	"strings"
 	"time"
@@ -25,7 +26,7 @@ func (f fileBytes) Size() int64 {
 	return int64(len(f.data))
 }
 
-func (fileBytes) Mode() os.FileMode {
+func (fileBytes) Mode() fs.FileMode {
 	return ModeFile
 }
 
@@ -41,8 +42,8 @@ type fileBytesOpen struct {
 	*bytes.Reader
 }
 
-func (fileBytesOpen) Readdir(int) ([]os.FileInfo, error) {
-	return nil, os.ErrInvalid
+func (fileBytesOpen) Readdir(int) ([]fs.FileInfo, error) {
+	return nil, fs.ErrInvalid
 }
 
 func (fileBytesOpen) Close() error {
@@ -67,7 +68,7 @@ func (f fileString) Size() int64 {
 	return int64(len(f.data))
 }
 
-func (fileString) Mode() os.FileMode {
+func (fileString) Mode() fs.FileMode {
 	return ModeFile
 }
 
@@ -83,8 +84,8 @@ type fileStringOpen struct {
 	*strings.Reader
 }
 
-func (fileStringOpen) Readdir(int) ([]os.FileInfo, error) {
-	return nil, os.ErrInvalid
+func (fileStringOpen) Readdir(int) ([]fs.FileInfo, error) {
+	return nil, fs.ErrInvalid
 }
 
 func (fileStringOpen) Close() error {
@@ -105,7 +106,7 @@ func (o OSFile) Size() int64 {
 }
 
 // Mode returns the Mode of the file
-func (o OSFile) Mode() os.FileMode {
+func (o OSFile) Mode() fs.FileMode {
 	s, err := os.Stat(string(o))
 	if err != nil {
 		return 0

@@ -3,8 +3,8 @@ package httpdir // import "vimagination.zapto.org/httpdir"
 
 import (
 	"io"
+	"io/fs"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -12,8 +12,8 @@ import (
 
 // Convenient FileMode constants
 const (
-	ModeDir  os.FileMode = os.ModeDir | 0755
-	ModeFile os.FileMode = 0644
+	ModeDir  fs.FileMode = fs.ModeDir | 0o755
+	ModeFile fs.FileMode = 0o644
 )
 
 // Default is the Dir used by the top-level functions
@@ -71,11 +71,11 @@ func (d Dir) get(name string) (namedNode, error) {
 		for _, part := range strings.Split(name, "/") {
 			nd, ok := n.Node.(dir)
 			if !ok {
-				return namedNode{}, os.ErrInvalid
+				return namedNode{}, fs.ErrInvalid
 			}
 			dn, ok := nd.contents[part]
 			if !ok {
-				return namedNode{}, os.ErrNotExist
+				return namedNode{}, fs.ErrNotExist
 			}
 			n = namedNode{part, dn}
 		}
@@ -116,7 +116,7 @@ func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
 			case dir:
 				td = f
 			default:
-				return dir{}, os.ErrInvalid
+				return dir{}, fs.ErrInvalid
 			}
 		} else {
 			nd := dir{
@@ -145,7 +145,7 @@ func (d Dir) Create(name string, n Node) error {
 		return nil
 	}
 	if _, ok := dn.contents[fname]; ok {
-		return os.ErrExist
+		return fs.ErrExist
 	}
 	dn.contents[fname] = n
 	return nil
@@ -166,13 +166,13 @@ func (d Dir) Remove(name string) error {
 	if nd, ok := nn.Node.(dir); ok {
 		return nd.Remove(fname)
 	}
-	return os.ErrInvalid
+	return fs.ErrInvalid
 }
 
 // Node represents a data file in the tree
 type Node interface {
 	Size() int64
-	Mode() os.FileMode
+	Mode() fs.FileMode
 	ModTime() time.Time
 	Open() (File, error)
 }
@@ -207,14 +207,14 @@ type File interface {
 	io.Reader
 	io.Seeker
 	io.Closer
-	Readdir(int) ([]os.FileInfo, error)
+	Readdir(int) ([]fs.FileInfo, error)
 }
 
 type wrapped struct {
-	os.FileInfo
+	fs.FileInfo
 	File
 }
 
-func (w wrapped) Stat() (os.FileInfo, error) {
+func (w wrapped) Stat() (fs.FileInfo, error) {
 	return w.FileInfo, nil
 }

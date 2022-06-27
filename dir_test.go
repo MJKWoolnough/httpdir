@@ -1,7 +1,7 @@
 package httpdir
 
 import (
-	"os"
+	"io/fs"
 	"testing"
 	"time"
 )
@@ -24,7 +24,7 @@ func TestDir(t *testing.T) {
 		return
 	}
 	_, err = d.Open("/dir2")
-	if err != os.ErrPermission {
+	if err != fs.ErrPermission {
 		t.Errorf("expecting permission error, got %q", err)
 	}
 	err = d.Create("/dir3/test/hello", FileString("Hello, World!", time.Now()))
@@ -69,7 +69,7 @@ func TestDir(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
-	if len(d.d.contents) != 2 { //dir && dir2 remain
+	if len(d.d.contents) != 2 { // dir && dir2 remain
 		t.Errorf("did not delete '/dir3'")
 	}
 }

@@ -2,7 +2,7 @@ package httpdir
 
 import (
 	"io"
-	"os"
+	"io/fs"
 	"testing"
 	"time"
 )
@@ -10,7 +10,7 @@ import (
 func TestDirectory(t *testing.T) {
 	d := dir{}
 	_, err := d.Open()
-	if err != os.ErrPermission {
+	if err != fs.ErrPermission {
 		t.Errorf("expecting permission error, got: %s", err)
 	}
 	if d.Mode() != ModeDir {
