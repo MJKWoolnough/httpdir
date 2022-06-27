@@ -8,8 +8,8 @@ Package httpdir provides an in-memory implementation of http.FileSystem
 
 ```go
 const (
-	ModeDir  os.FileMode = os.ModeDir | 0755
-	ModeFile os.FileMode = 0644
+	ModeDir  fs.FileMode = fs.ModeDir | 0o755
+	ModeFile fs.FileMode = 0o644
 )
 ```
 Convenient FileMode constants
@@ -116,7 +116,7 @@ type File interface {
 	io.Reader
 	io.Seeker
 	io.Closer
-	Readdir(int) ([]os.FileInfo, error)
+	Readdir(int) ([]fs.FileInfo, error)
 }
 ```
 
@@ -127,7 +127,7 @@ File represents an opened data Node
 ```go
 type Node interface {
 	Size() int64
-	Mode() os.FileMode
+	Mode() fs.FileMode
 	ModTime() time.Time
 	Open() (File, error)
 }
@@ -170,7 +170,7 @@ ModTime returns the ModTime of the file
 #### func (OSFile) Mode
 
 ```go
-func (o OSFile) Mode() os.FileMode
+func (o OSFile) Mode() fs.FileMode
 ```
 Mode returns the Mode of the file
 
