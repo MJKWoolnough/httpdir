@@ -348,7 +348,7 @@ func main() {
 			ne(f.WriteString(soloEnd))
 		}
 	}
-	ne(fmt.Fprintf(f, packageEnd))
+	ne(fmt.Fprint(f, packageEnd))
 	e(f.Close())
 }
 
