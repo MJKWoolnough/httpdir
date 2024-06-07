@@ -30,25 +30,30 @@ func (d dir) Open() (File, error) {
 		if f, ok := d.contents["index.html"]; ok {
 			return f.Open()
 		}
+
 		return nil, fs.ErrPermission
 	}
+
 	contents := make([]fs.FileInfo, 0, len(d.contents))
+
 	for name, node := range d.contents {
 		contents = append(contents, namedNode{name, node})
 	}
-	dir := &directory{
-		contents: contents,
-	}
+
+	dir := &directory{contents: contents}
+
 	sort.Sort(dir)
+
 	return dir, nil
 }
 
 func (d dir) Remove(name string) error {
-	_, ok := d.contents[name]
-	if !ok {
+	if _, ok := d.contents[name]; !ok {
 		return fs.ErrNotExist
 	}
+
 	delete(d.contents, name)
+
 	return nil
 }
 
@@ -67,6 +72,7 @@ func (directory) Read([]byte) (int, error) {
 
 func (d *directory) Seek(offset int64, whence int) (int64, error) {
 	pos := int64(d.pos)
+
 	switch whence {
 	case io.SeekStart:
 		pos = offset
@@ -75,10 +81,13 @@ func (d *directory) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekEnd:
 		pos = int64(len(d.contents)) + offset
 	}
+
 	if pos != 0 {
 		return 0, fs.ErrInvalid
 	}
+
 	d.pos = 0
+
 	return 0, nil
 }
 
@@ -86,12 +95,16 @@ func (d *directory) Readdir(n int) ([]fs.FileInfo, error) {
 	if n < 0 || d.pos+n > len(d.contents) {
 		n = len(d.contents) - d.pos
 	}
+
 	last := d.pos + n
 	toRet := d.contents[d.pos:last]
+
 	if len(toRet) == 0 {
 		return nil, io.EOF
 	}
+
 	d.pos = last
+
 	return toRet, nil
 }
 

@@ -1,4 +1,4 @@
-// Package httpdir provides an in-memory implementation of http.FileSystem
+// Package httpdir provides an in-memory implementation of http.FileSystem.
 package httpdir // import "vimagination.zapto.org/httpdir"
 
 import (
@@ -10,36 +10,36 @@ import (
 	"time"
 )
 
-// Convenient FileMode constants
+// Convenient FileMode constants.
 const (
 	ModeDir  fs.FileMode = fs.ModeDir | 0o755
 	ModeFile fs.FileMode = 0o644
 )
 
-// Default is the Dir used by the top-level functions
+// Default is the Dir used by the top-level functions.
 var Default = New(time.Now())
 
-// Mkdir is a convenience function for Default.Mkdir
+// Mkdir is a convenience function for Default.Mkdir.
 func Mkdir(name string, modTime time.Time, index bool) error {
 	return Default.Mkdir(name, modTime, index)
 }
 
-// Create is a convenience function for Default.Create
+// Create is a convenience function for Default.Create.
 func Create(name string, n Node) error {
 	return Default.Create(name, n)
 }
 
-// Remove is a convenience function for Default.Remove
+// Remove is a convenience function for Default.Remove.
 func Remove(name string) error {
 	return Default.Remove(name)
 }
 
-// Dir is the start of a simple in-memory filesystem tree
+// Dir is the start of a simple in-memory filesystem tree.
 type Dir struct {
 	d dir
 }
 
-// New creates a new, initialised, Dir
+// New creates a new, initialised, Dir.
 func New(t time.Time) Dir {
 	return Dir{
 		dir{
@@ -58,6 +58,7 @@ func (d Dir) Open(name string) (http.File, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return n.Open()
 }
 
@@ -66,20 +67,25 @@ func (d Dir) get(name string) (namedNode, error) {
 	if len(name) > 0 && name[0] == '/' {
 		name = name[1:]
 	}
+
 	n := namedNode{"", d.d}
+
 	if len(name) > 0 {
 		for _, part := range strings.Split(name, "/") {
 			nd, ok := n.Node.(dir)
 			if !ok {
 				return namedNode{}, fs.ErrInvalid
 			}
+
 			dn, ok := nd.contents[part]
 			if !ok {
 				return namedNode{}, fs.ErrNotExist
 			}
+
 			n = namedNode{part, dn}
 		}
 	}
+
 	return n, nil
 }
 
@@ -98,20 +104,20 @@ func (d Dir) get(name string) (namedNode, error) {
 // Directories already existing will not be modified.
 func (d Dir) Mkdir(name string, modTime time.Time, index bool) error {
 	_, err := d.makePath(path.Clean(name), modTime, index)
+
 	return err
 }
 
 func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
-	if len(name) > 0 && name[0] == '/' {
-		name = name[1:]
-	}
+	name = strings.TrimPrefix(name, "/")
 	td := d.d
+
 	for _, part := range strings.Split(name, "/") {
 		if part == "" {
 			continue
 		}
-		n, ok := td.contents[part]
-		if ok {
+
+		if n, ok := td.contents[part]; ok {
 			switch f := n.(type) {
 			case dir:
 				td = f
@@ -120,14 +126,16 @@ func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
 			}
 		} else {
 			nd := dir{
-				index,
-				make(map[string]Node),
-				modTime,
+				index:    index,
+				contents: make(map[string]Node),
+				modTime:  modTime,
 			}
+
 			td.contents[part] = nd
 			td = nd
 		}
 	}
+
 	return td, nil
 }
 
@@ -137,17 +145,21 @@ func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
 // modTime to that of the Node and the index to false.
 //
 // If you want to specify alternate modTime/index values for the directories,
-// then you should create them first with Mkdir
+// then you should create them first with Mkdir.
 func (d Dir) Create(name string, n Node) error {
 	dname, fname := path.Split(name)
+
 	dn, err := d.makePath(dname, n.ModTime(), false)
 	if err != nil {
-		return nil
+		return err
 	}
+
 	if _, ok := dn.contents[fname]; ok {
 		return fs.ErrExist
 	}
+
 	dn.contents[fname] = n
+
 	return nil
 }
 
@@ -159,17 +171,20 @@ func (d Dir) Create(name string, n Node) error {
 // you intend to call this method.
 func (d Dir) Remove(name string) error {
 	dname, fname := path.Split(name)
+
 	nn, err := d.get(dname)
 	if err != nil {
 		return err
 	}
+
 	if nd, ok := nn.Node.(dir); ok {
 		return nd.Remove(fname)
 	}
+
 	return fs.ErrInvalid
 }
 
-// Node represents a data file in the tree
+// Node represents a data file in the tree.
 type Node interface {
 	Size() int64
 	Mode() fs.FileMode
@@ -199,10 +214,11 @@ func (n namedNode) Open() (http.File, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return wrapped{n, f}, nil
 }
 
-// File represents an opened data Node
+// File represents an opened data Node.
 type File interface {
 	io.Reader
 	io.Seeker
