@@ -93,7 +93,7 @@ func (fileStringOpen) Close() error {
 }
 
 // OSFile is the path of a file in the real filesystem to be put into the
-// im-memory filesystem.
+// in-memory filesystem.
 type OSFile string
 
 // Size returns the size of the file.
