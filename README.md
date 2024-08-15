@@ -2,7 +2,7 @@
 --
     import "vimagination.zapto.org/httpdir"
 
-Package httpdir provides an in-memory implementation of http.FileSystem
+Package httpdir provides an in-memory implementation of http.FileSystem.
 
 ## Usage
 
@@ -12,33 +12,33 @@ const (
 	ModeFile fs.FileMode = 0o644
 )
 ```
-Convenient FileMode constants
+Convenient FileMode constants.
 
 ```go
 var Default = New(time.Now())
 ```
-Default is the Dir used by the top-level functions
+Default is the Dir used by the top-level functions.
 
 #### func  Create
 
 ```go
 func Create(name string, n Node) error
 ```
-Create is a convenience function for Default.Create
+Create is a convenience function for Default.Create.
 
 #### func  Mkdir
 
 ```go
 func Mkdir(name string, modTime time.Time, index bool) error
 ```
-Mkdir is a convenience function for Default.Mkdir
+Mkdir is a convenience function for Default.Mkdir.
 
 #### func  Remove
 
 ```go
 func Remove(name string) error
 ```
-Remove is a convenience function for Default.Remove
+Remove is a convenience function for Default.Remove.
 
 #### type Dir
 
@@ -47,14 +47,14 @@ type Dir struct {
 }
 ```
 
-Dir is the start of a simple in-memory filesystem tree
+Dir is the start of a simple in-memory filesystem tree.
 
 #### func  New
 
 ```go
 func New(t time.Time) Dir
 ```
-New creates a new, initialised, Dir
+New creates a new, initialised, Dir.
 
 #### func (Dir) Create
 
@@ -67,7 +67,7 @@ Any non-existent directories will be created automatically, setting the modTime
 to that of the Node and the index to false.
 
 If you want to specify alternate modTime/index values for the directories, then
-you should create them first with Mkdir
+you should create them first with Mkdir.
 
 #### func (Dir) Mkdir
 
@@ -120,7 +120,7 @@ type File interface {
 }
 ```
 
-File represents an opened data Node
+File represents an opened data Node.
 
 #### type Node
 
@@ -133,7 +133,7 @@ type Node interface {
 }
 ```
 
-Node represents a data file in the tree
+Node represents a data file in the tree.
 
 #### func  FileBytes
 
@@ -141,7 +141,7 @@ Node represents a data file in the tree
 func FileBytes(data []byte, modTime time.Time) Node
 ```
 FileBytes provides an implementation of Node that takes a byte slice as its data
-source
+source.
 
 #### func  FileString
 
@@ -149,7 +149,7 @@ source
 func FileString(data string, modTime time.Time) Node
 ```
 FileString provides an implementation of Node that takes a string as its data
-source
+source.
 
 #### type OSFile
 
@@ -157,33 +157,33 @@ source
 type OSFile string
 ```
 
-OSFile is the path of a file in the real filesystem to be put into the im-memory
-filesystem
+OSFile is the path of a file in the real filesystem to be put into the in-memory
+filesystem.
 
 #### func (OSFile) ModTime
 
 ```go
 func (o OSFile) ModTime() time.Time
 ```
-ModTime returns the ModTime of the file
+ModTime returns the ModTime of the file.
 
 #### func (OSFile) Mode
 
 ```go
 func (o OSFile) Mode() fs.FileMode
 ```
-Mode returns the Mode of the file
+Mode returns the Mode of the file.
 
 #### func (OSFile) Open
 
 ```go
 func (o OSFile) Open() (File, error)
 ```
-Open opens the file, returning it as a File
+Open opens the file, returning it as a File.
 
 #### func (OSFile) Size
 
 ```go
 func (o OSFile) Size() int64
 ```
-Size returns the size of the file
+Size returns the size of the file.
