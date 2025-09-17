@@ -130,7 +130,6 @@ func (d Dir) makePath(name string, modTime time.Time, index bool) (dir, error) {
 				contents: make(map[string]Node),
 				modTime:  modTime,
 			}
-
 			td.contents[part] = nd
 			td = nd
 		}
