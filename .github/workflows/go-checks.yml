@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
+      - name: Install Brotli dev headers
+        run: sudo apt update && sudo apt install -y libbrotli-dev
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
