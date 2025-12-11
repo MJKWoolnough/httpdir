@@ -126,8 +126,10 @@ func (r tickReplacer) Write(p []byte) (int, error) {
 				break
 			}
 		}
+
 		p = p[s:]
 	}
+
 	return n, err
 }
 
@@ -204,8 +206,10 @@ func main() {
 	} else {
 		f, err = os.Open(*in)
 		e(err)
+
 		fi, err := f.Stat()
 		e(err)
+
 		date = fi.ModTime().Unix()
 	}
 	if *odate != "" {
@@ -247,6 +251,7 @@ func main() {
 			Ext:        ".br",
 		})
 	}
+
 	if *flcomp {
 		var b memio.Buffer
 
@@ -265,6 +270,7 @@ func main() {
 			Ext:        ".fl",
 		})
 	}
+
 	if *gzcomp || *zpfcomp {
 		var b memio.Buffer
 
@@ -296,6 +302,7 @@ func main() {
 
 	if *single && (*gzcomp || *brcomp || *flcomp) {
 		im = append(im, "\"vimagination.zapto.org/memio\"")
+
 		if encs[0].Ext != "" {
 			im = append(im, "\"strings\"")
 		}
@@ -317,6 +324,7 @@ func main() {
 			imports += "\n"
 			ext = true
 		}
+
 		imports += "	" + i + "\n"
 	}
 
