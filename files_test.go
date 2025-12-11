@@ -22,20 +22,24 @@ func TestBytes(t *testing.T) {
 	}
 
 	f, err := b.Open()
-
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
+
 	tr := make([]byte, 6)
+
 	n, err := f.Read(tr)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		return
 	}
+
 	if n != 6 {
 		t.Errorf("expecting to read 6 bytes, read %d byte(s)", n)
 	}
+
 	if string(tr[:n]) != "Hello," {
 		t.Errorf("expecting to have read \"Hello,\", read %s", tr)
 	}
@@ -43,11 +47,14 @@ func TestBytes(t *testing.T) {
 	n, err = f.Read(tr)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
+
 	if n != 6 {
 		t.Errorf("expecting to read 6 bytes, read %d byte(s)", n)
 	}
+
 	if string(tr[:n]) != " World" {
 		t.Errorf("expecting to have read \" World\", read %s", tr)
 	}
@@ -55,11 +62,14 @@ func TestBytes(t *testing.T) {
 	n, err = f.Read(tr)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
+
 	if n != 1 {
 		t.Errorf("expecting to read 1 byte, read %d byte(s)", n)
 	}
+
 	if string(tr[:n]) != "!" {
 		t.Errorf("expecting to have read \"!\", read %s", tr)
 	}
@@ -82,20 +92,24 @@ func TestString(t *testing.T) {
 	}
 
 	f, err := s.Open()
-
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		return
 	}
+
 	tr := make([]byte, 6)
+
 	n, err := f.Read(tr)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
+
 	if n != 6 {
 		t.Errorf("expecting to read 6 bytes, read %d byte(s)", n)
 	}
+
 	if string(tr[:n]) != "Hello," {
 		t.Errorf("expecting to have read \"Hello,\", read %s", tr)
 	}
@@ -103,11 +117,14 @@ func TestString(t *testing.T) {
 	n, err = f.Read(tr)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
+
 	if n != 6 {
 		t.Errorf("expecting to read 6 bytes, read %d byte(s)", n)
 	}
+
 	if string(tr[:n]) != " World" {
 		t.Errorf("expecting to have read \" World\", read %s", tr)
 	}
@@ -115,11 +132,14 @@ func TestString(t *testing.T) {
 	n, err = f.Read(tr)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+
 		return
 	}
+
 	if n != 1 {
 		t.Errorf("expecting to read 1 byte, read %d byte(s)", n)
 	}
+
 	if string(tr[:n]) != "!" {
 		t.Errorf("expecting to have read \"!\", read %s", tr)
 	}
