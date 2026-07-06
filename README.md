@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/MJKWoolnough/httpdir/actions/workflows/go-checks.yml/badge.svg)](https://github.com/MJKWoolnough/httpdir/actions)
 [![Go Reference](https://pkg.go.dev/badge/vimagination.zapto.org/httpdir.svg)](https://pkg.go.dev/vimagination.zapto.org/httpdir)
-[![Go Report Card](https://goreportcard.com/badge/vimagination.zapto.org/httpdir)](https://goreportcard.com/report/vimagination.zapto.org/httpdir)
 
 --
     import "vimagination.zapto.org/httpdir"
