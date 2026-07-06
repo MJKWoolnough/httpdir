@@ -204,7 +204,7 @@ func (n namedNode) IsDir() bool {
 	return n.Mode().IsDir()
 }
 
-func (n namedNode) Sys() interface{} {
+func (n namedNode) Sys() any {
 	return n.Node
 }
 
